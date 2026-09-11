@@ -8,7 +8,7 @@ const daftar = async (req, res) => {
     }
 
     try {
-        const query = 'INSERT INTO users (nama_UMKM, email, password) VALUES (?, ?, ?)';
+        const query = 'INSERT INTO users (nama_UMKM, email, password) VALUES ($1, $2, $3)';
         await db.query(query, [nama_UMKM, email, password]);
         
         return res.status(201).json({
@@ -30,7 +30,7 @@ const masuk = async (req, res) => {
     }
 
     try {
-        const query = 'SELECT * FROM users WHERE email = ? AND password = ?';
+        const query = 'SELECT * FROM users WHERE email = $1 AND password = $2';
         const [rows] = await db.query(query, [email, password]);
 
         if (rows.length === 0) {
