@@ -9,15 +9,40 @@ const transaksiRoutes = require('./routes/transaksiRoutes');
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+app.use(cors(allowedOrigins.length ? {
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Origin tidak diizinkan oleh CORS.'));
+    }
+} : undefined));
 app.use(express.json());
+
+if (process.env.VERCEL) {
+    app.use((req, res, next) => {
+        if (!req.url.startsWith('/api')) {
+            req.url = `/api${req.url}`;
+        }
+        next();
+    });
+}
 
 // mendaftarkan semua jalur api untuk frontend
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/transaksi', transaksiRoutes);
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server jalan di http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`Server jalan di http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

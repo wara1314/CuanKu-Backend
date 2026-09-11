@@ -1,19 +1,20 @@
 const db = require('../config/db');
 
 const daftar = async (req, res) => {
-    const { nama_UMKM, email, password } = req.body;
+    const { nama_UMKM, nama_lengkap, username, email, password } = req.body;
 
     if (!nama_UMKM || !email || !password) {
         return res.status(400).json({ error: "Semua data wajib diisi"});
     }
 
     try {
-        const query = 'INSERT INTO users (nama_UMKM, email, password) VALUES (?, ?, ?)';
-        await db.query(query, [nama_UMKM, email, password]);
+        const query = `INSERT INTO users (nama_UMKM, nama_lengkap, username, email, password)
+            VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+        const result = await db.query(query, [nama_UMKM, nama_lengkap || null, username || null, email, password]);
         
         return res.status(201).json({
         pesan: "Reistrasi akun UMKM berhasil disimpan ke database!",
-        data: {nama_UMKM, email }
+        data: result.rows[0]
     });
     } catch (error) {
         console.error("Error Registrasi:", error.message);
@@ -30,8 +31,9 @@ const masuk = async (req, res) => {
     }
 
     try {
-        const query = 'SELECT * FROM users WHERE email = ? AND password = ?';
-        const [rows] = await db.query(query, [email, password]);
+        const query = 'SELECT * FROM users WHERE email = $1 AND password = $2';
+        const result = await db.query(query, [email, password]);
+        const rows = result.rows;
 
         if (rows.length === 0) {
             return res.status(401).json({ error: "Email atau password salah!"});
@@ -40,7 +42,7 @@ const masuk = async (req, res) => {
         return res.json({
         pesan: "Login berhasil terverifikasi database!",
         token: "ini_token_rahasia",
-        user: { nama_UMKM: rows[0].nama_UMKM, email: rows[0].email }
+        user: rows[0]
     });
     } catch (error) {
         console.error("Error Login:", error.message);
